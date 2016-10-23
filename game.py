@@ -42,7 +42,7 @@ def minimax_Desicion (board, agent, pos, depth):
         result_board = result(board, move, agent, pos)
         depth = depth -1
         temp = min_value(result_board, agent, pos, depth)
-        if temp > value:
+        if temp > maxvalue:
             maxvalue = temp
             bestmove = move
     return bestmove
@@ -73,7 +73,7 @@ def max_value(board, agent, pos, depth):
     for move in moves:
         result_board = result(board, move, agent, pos)
         depth = depth -1
-        temp = min_value(result_board, agent, pos)
+        temp = min_value(result_board, agent, pos, depth)
         if temp > value:
             value = temp
     return value
@@ -119,11 +119,130 @@ def get_possible_moves(board, agent, pos):
             moves.append(3)
     return moves
 
+def get_value(board, agent, pos):
+    val = 0
+    val = val + piece_count(board, agent)
+    val = val + piece_location(board, agent)
+    val = val + safe_piece(board, agent)
+
+    if agent.strat == 'off':    # offensive
+        val = val + 2 * captured_piece(board, agent)
+        val = val + enemy_peice(board, agent)
+    else:
+        val = val + captured_piece(board, agent)
+        val = val + 2 * enemy_peice(board, agent)
+
+    return val
+
+
+def piece_count(board, agent):
+    count = 0
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                count = count + 1
+    count = count * 10
+    return count
+
+def piece_location(board, agent):
+    value_map = [ 5, 15, 15,  5,  5, 15, 15,  5,
+                 2,  3,  3,  3,  3,  3,  3,  2,
+                 4,  6,  6,  6,  6,  6,  6,  4,
+                 7, 10, 10, 10, 10, 10, 10,  7,
+                11, 15, 15, 15, 15, 15, 15, 11,
+                16, 21, 21, 21, 21, 21, 21, 16,
+                20, 28, 28, 28, 28, 28, 28, 20,
+                36, 36, 36, 36, 36, 36, 36, 36
+                ]
+    if agent.type == 'a':
+        value_map.reverse()
+    value = 0
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                value = value + value_map[x + y*8]
+    return value
+
+def safe_piece(board, agent):
+    val_map = [ 5, 15, 15,  5,  5, 15, 15,  5,
+                 2,  3,  3,  3,  3,  3,  3,  2,
+                 4,  6,  6,  6,  6,  6,  6,  4,
+                 7, 10, 10, 10, 10, 10, 10,  7,
+                11, 15, 15, 15, 15, 15, 15, 11,
+                16, 21, 21, 21, 21, 21, 21, 16,
+                20, 28, 28, 28, 28, 28, 28, 20,
+                36, 36, 36, 36, 36, 36, 36, 36
+                ]
+    if agent.type == 'a':
+        enemy = 'b'
+    else:
+        enemy = 'a'
+    val = 0
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                if agent.type == 'a':
+                    if y == 7:
+                        val = val + val_map[x+y*8] * 1.5
+                    elif x == 0 and board[y+1][x+1] != enemy:
+                        val = val + val_map[x+y*8] * 1.5
+                    elif x == 7 and board[y+1][x-1] != enemy:
+                        val = val + val_map[x + y * 8] * 1.5
+                    elif board[y + 1][x + 1] != enemy and board[y + 1][x - 1] != enemy:
+                        val = val + val_map[x + y * 8] * 1.5
+                else:
+                    if y == 0:
+                        val = val + val_map[x+y*8] * 1.5
+                    elif x == 0 and board[y-1][x+1] != enemy:
+                        val = val + val_map[x+y*8] * 1.5
+                    elif x == 7 and board[y-1][x-1] != enemy:
+                        val = val + val_map[x + y * 8] * 1.5
+                    elif board[y - 1][x + 1] != enemy and board[y - 1][x - 1] != enemy:
+                        val = val + val_map[x + y * 8] * 1.5
+    return val
+
+def captured_piece(board, agent):
+    count = 0
+    if agent.type == 'a':
+        enemy = 'b'
+    else:
+        enemy = 'a'
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == enemy:
+                count = count + 1
+    count = count * 10
+    return count
+
+def enemy_piece(board, agent):
+    val_map = [ 5, 15, 15,  5,  5, 15, 15,  5,
+                 2,  3,  3,  3,  3,  3,  3,  2,
+                 4,  6,  6,  6,  6,  6,  6,  4,
+                 7, 10, 10, 10, 10, 10, 10,  7,
+                11, 15, 15, 15, 15, 15, 15, 11,
+                16, 21, 21, 21, 21, 21, 21, 16,
+                20, 28, 28, 28, 28, 28, 28, 20,
+                36, 36, 36, 36, 36, 36, 36, 36
+                ]
+    if agent.type == 'a':
+        val_map.reverse()
+        enemy = 'b'
+    else:
+        enemy = 'a'
+    val = 0
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == enemy:
+                val = val + val_map[x + y * 8]
+
+    return val
+
+
 
 
 def agent_move(board):
-    agent1 = agent("mm", "off",'a')
-    agent2 = agent("mm", "off",'b')
+    agent1 = agent('mm', 'off','a')
+    agent2 = agent('mm', 'off','b')
     ##agent1 move and set value
     value = 0
     for pos in range(63):
