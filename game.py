@@ -34,18 +34,49 @@ class board:
         return board        ##yx index
 
 
-def minimax_Desicion (board, agent, pos):
+def minimax_Desicion (board, agent, pos, depth):
     moves = get_possible_moves(board, agent, pos)
-    value = -sys.maxsize - 1
+    maxvalue = -sys.maxsize - 1
+    bestmove = 0
     for move in moves:
         result_board = result(board, move, agent, pos)
-        value = min_value(result_board, agent, pos)
+        depth = depth -1
+        temp = min_value(result_board, agent, pos, depth)
+        if temp > value:
+            maxvalue = temp
+            bestmove = move
+    return bestmove
 
 
+def min_value(board, agent, pos, depth):
+    if agent.type == 'a' and pos/8 == 7 or depth == 0:            # a at terminal state
+        return get_value(board, agent, pos)
+    elif agent.type == 'b' and pos/8 == 0 or depth == 0:
+        return get_value(board, agent, pos)
+    value = sys.maxsize
+    moves = get_possible_moves(board, agent, pos)
+    for move in moves:
+        result_board = result(board, move, agent, pos)
+        depth = depth - 1
+        temp = max_value(result_board, agent, pos, depth)
+        if temp < value:
+            value = temp
+    return value
 
-def min_value(board, agent, pos):
-
-
+def max_value(board, agent, pos, depth):
+    if agent.type == 'a' and pos/8 == 7 or depth == 0:            # a at terminal state
+        return get_value(board, agent, pos)
+    elif agent.type == 'b' and pos/8 == 0 or depth == 0:
+        return get_value(board, agent, pos)
+    value = -sys.maxsize - 1
+    moves = get_possible_moves(board, agent, pos)
+    for move in moves:
+        result_board = result(board, move, agent, pos)
+        depth = depth -1
+        temp = min_value(result_board, agent, pos)
+        if temp > value:
+            value = temp
+    return value
 
 def result(board, move, agent, pos):
     new_board = board
@@ -98,4 +129,4 @@ def agent_move(board):
     for pos in range(63):
         if board(pos) == "a":
             temp_board = board
-            value = minimax_Desicion(temp_board,agent1, pos)
+            value = minimax_Desicion(temp_board,agent1, pos, 3)
