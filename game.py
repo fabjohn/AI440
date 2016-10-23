@@ -7,13 +7,11 @@
 #initialize board
 import sys
 class agent:
-    def __init__(self, algo, strat, type):
-        self.position = 0
-        self.status = 0
+    def __init__(self, algo, strat, type, status):
         self.algo = algo
         self.strat = strat
         self.type = type
-
+        self.status = status
 class board:
     def __init__(self):
         self.board = self. creat_board()
@@ -34,48 +32,67 @@ class board:
         return board        ##yx index
 
 
-def minimax_Desicion (board, agent, pos, depth):
-    moves = get_possible_moves(board, agent, pos)
+def minimax_desicion (board, agent,  depth):
+    #moves = get_possible_moves(board, agent)
     maxvalue = -sys.maxsize - 1
     bestmove = 0
-    for move in moves:
-        result_board = result(board, move, agent, pos)
-        depth = depth -1
-        temp = min_value(result_board, agent, pos, depth)
-        if temp > maxvalue:
-            maxvalue = temp
-            bestmove = move
-    return bestmove
+    temp_board = board
+    pos = 0
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                moves = get_possible_moves(board, agent, x+y*8)
+                for move in moves:
+                    result_board = result(board, move, agent, x+y*8)
+                    depth = depth -1
+                    temp = min_value(result_board, agent, depth)
+                    if temp > maxvalue:
+                        maxvalue = temp
+                        bestmove = move
+                        temp_board = result_board
+                        pos = x+y*8
+    if agent.type == 'a' and pos/8 == 6:
+        agent.status = 1
+    elif agent.type == 'b' and pos/8 == 1:
+        agent.status = 1
 
+    best_board = result(temp_board, bestmove, agent, pos)
+    return best_board
 
-def min_value(board, agent, pos, depth):
-    if agent.type == 'a' and pos/8 == 7 or depth == 0:            # a at terminal state
-        return get_value(board, agent, pos)
-    elif agent.type == 'b' and pos/8 == 0 or depth == 0:
-        return get_value(board, agent, pos)
+def min_value(board, agent, depth):
+    if agent.type == 'a' or depth == 0:            # a at terminal state
+        return get_value(board, agent)
+    elif agent.type == 'b' or depth == 0:
+        return get_value(board, agent)
     value = sys.maxsize
-    moves = get_possible_moves(board, agent, pos)
-    for move in moves:
-        result_board = result(board, move, agent, pos)
-        depth = depth - 1
-        temp = max_value(result_board, agent, pos, depth)
-        if temp < value:
-            value = temp
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                moves = get_possible_moves(board, agent, x+y*8)
+                for move in moves:
+                    result_board = result(board, move, agent, x+y*8)
+                    depth = depth -1
+                    temp = min_value(result_board, agent, depth)
+                    if temp > value:
+                        value = temp
     return value
 
-def max_value(board, agent, pos, depth):
-    if agent.type == 'a' and pos/8 == 7 or depth == 0:            # a at terminal state
-        return get_value(board, agent, pos)
-    elif agent.type == 'b' and pos/8 == 0 or depth == 0:
-        return get_value(board, agent, pos)
+def max_value(board, agent,  depth):
+    if agent.type == 'a'  or depth == 0:            # a at terminal state
+        return get_value(board, agent)
+    elif agent.type == 'b'  or depth == 0:
+        return get_value(board, agent)
     value = -sys.maxsize - 1
-    moves = get_possible_moves(board, agent, pos)
-    for move in moves:
-        result_board = result(board, move, agent, pos)
-        depth = depth -1
-        temp = min_value(result_board, agent, pos, depth)
-        if temp > value:
-            value = temp
+    for x in range(8):
+        for y in range(8):
+            if board[y][x] == agent.type:
+                moves = get_possible_moves(board, agent, x+y*8)
+                for move in moves:
+                    result_board = result(board, move, agent, x+y*8)
+                    depth = depth -1
+                    temp = min_value(result_board, agent, depth)
+                    if temp > value:
+                        value = temp
     return value
 
 def result(board, move, agent, pos):
@@ -119,7 +136,7 @@ def get_possible_moves(board, agent, pos):
             moves.append(3)
     return moves
 
-def get_value(board, agent, pos):
+def get_value(board, agent):
     val = 0
     val = val + piece_count(board, agent)
     val = val + piece_location(board, agent)
@@ -127,10 +144,10 @@ def get_value(board, agent, pos):
 
     if agent.strat == 'off':    # offensive
         val = val + 2 * captured_piece(board, agent)
-        val = val + enemy_peice(board, agent)
+        val = val + enemy_piece(board, agent)
     else:
         val = val + captured_piece(board, agent)
-        val = val + 2 * enemy_peice(board, agent)
+        val = val + 2 * enemy_piece(board, agent)
 
     return val
 
@@ -238,14 +255,27 @@ def enemy_piece(board, agent):
     return val
 
 
+def print_board(board):
+    for x in range(8):
+        print('\n')
+        for y in range(8):
+            print(board[y][x])
+
 
 
 def agent_move(board):
-    agent1 = agent('mm', 'off','a')
-    agent2 = agent('mm', 'off','b')
+    agent1 = agent('mm', 'off','a', 0)
+    agent2 = agent('mm', 'off','b', 0)
     ##agent1 move and set value
     value = 0
-    for pos in range(63):
-        if board(pos) == "a":
-            temp_board = board
-            value = minimax_Desicion(temp_board,agent1, pos, 3)
+    curr_board = board()
+    while 1:
+        first_board = minimax_desicion(curr_board, agent1, 3)
+        print_board(first_board)
+        if agent1.status == 1:
+            break
+        second_board = minimax_desicion(first_board, agent2, 3)
+        if agent2.status == 1:
+            break
+        print_board(second_board)
+        curr_board = second_board
