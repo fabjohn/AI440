@@ -1,79 +1,194 @@
 
-# func: Find safe piece in the board
-def safe_piece(board, pawnName, dir):
-    bonus = 10
-    pawnList = find_all_pawn(board, pawnName)
-    val = 0
-    enemy = ''
-    if pawnName == 'w':
-        enemy = 'b'
-    else:
-        enemy = 'w'
+def minimax(board, player):
+    s = state(player, player.pawnName)
+    pawnList = find_all_pawn(board, s.currTurn)
+    bestMove = []
+    bestVal = 0
+    dir = player.goal
     for pawn in pawnList:
-        x = pawn[0]; y = pawn[1]
-        if dir == 'D':
-            if y == 7:
-                val = val + bonus
-            elif x == 0 and board[y+1][x+1] != enemy:
-                val = val + bonus
-            elif x == 7 and board[y+1][x-1] != enemy:
-                val = val +bonus
-            elif board[y+1][x+1] != enemy and board[y+1][x-1] != enemy:
-                val = val + bonus
-        if dir == 'U':
-            if y == 0:
-                val = val + bonus
-            elif x == 0 and board[y - 1][x + 1] != enemy:
-                val = val + bonus
-            elif x == 7 and board[y - 1][x - 1] != enemy:
-                val = val + bonus
-            elif board[y - 1][x + 1] != enemy and board[y - 1][x - 1] != enemy:
-                val = val + bonus
-    return val
+        # # Debug
+        # if pawn == (7,7,'b'):
+        #     print('Hi')
 
-# func: Evaluate how many opponent's piece in total has been captured.
-def captured_piece(board, pawnName):
-    bonus = 10
-    val = 0
-    enemy = ''
-    if pawnName == 'w':
-        enemy = 'b'
+        move = [pawn, dir, 'l']
+        if check_pawn_move(board, move):
+            captured = take_action(board, move)
+            # Change state for recursion
+            s.depth = s.depth + 1
+            s.currTurn = changeTurn(s.currTurn)
+            # Call
+            result = minValue(board, s)
+            # Restore state
+            s.depth = s.depth - 1
+            s.currTurn = changeTurn(s.currTurn)
+            if result > bestVal:
+                bestVal = result
+                bestMove = move
+            retrieve_action(board, move, captured)
+        move = [pawn, dir, 'f']
+        if check_pawn_move(board, move):
+            captured = take_action(board, move)
+            # Change state for recursion
+            s.depth = s.depth + 1
+            s.currTurn = changeTurn(s.currTurn)
+            # Call
+            result = minValue(board, s)
+            # Restore state
+            s.depth = s.depth - 1
+            s.currTurn = changeTurn(s.currTurn)
+            if result > bestVal:
+                bestVal = result
+                bestMove = move
+            retrieve_action(board, move, captured)
+        move = [pawn, dir, 'r']
+        if check_pawn_move(board, move):
+            captured = take_action(board, move)
+            # Change state for recursion
+            s.depth = s.depth + 1
+            s.currTurn = changeTurn(s.currTurn)
+            # Call
+            result = minValue(board, s)
+            # Restore state
+            s.depth = s.depth - 1
+            s.currTurn = changeTurn(s.currTurn)
+            if result > bestVal:
+                bestVal = result
+                bestMove = move
+            retrieve_action(board, move, captured)
+    return bestMove
+
+# func: min_Value function.
+# input: board, current board
+#        state, containing the player who calls minimax/alpha-beta algorithm and player who moves now.
+def minValue(board, state):
+    if cutOff(state.depth):
+        return utility(board, state)
     else:
-        enemy = 'w'
-    val = bonus * len(find_all_pawn(board, enemy))
-    return val
+        val = 9999  # Suppose 9999 = infinity
+        # bestMove = []
+        pawnList = find_all_pawn(board, state.currTurn)
+        # Find current player's direction
+        dir = ''
+        if state.currTurn == state.player.pawnName:
+            dir = state.player.goal
+        else:
+            if state.player.goal == 'U':
+                dir = 'D'
+            else:
+                dir = 'U'
+        # Check each pawn
+        for pawn in pawnList:
+            move = [pawn, dir, 'l']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state for recursion
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = maxValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result < val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+            move = [pawn, dir, 'f']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state for recursion
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = maxValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result < val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+            move = [pawn, dir, 'r']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state for recursion
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = maxValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result < val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+        return val
 
-# func: Evaluate the location of enemy's pieces
-def enemy_piece_location(board, pawnName, dir):
-    valueArr = [5, 15, 15, 5, 5, 15, 15, 5,
-                2, 3, 3, 3, 3, 3, 3, 2,
-                4, 6, 6, 6, 6, 6, 6, 4,
-                7, 10, 10, 10, 10, 10, 10, 7,
-                11, 15, 15, 15, 15, 15, 15, 11,
-                16, 21, 21, 21, 21, 21, 21, 16,
-                20, 28, 28, 28, 28, 28, 28, 20,
-                36, 36, 36, 36, 36, 36, 36, 36
-                ]
-    if dir == 'D':  # If we go down, enemy go up
-        valueArr.reverse()
-    enemy = ''
-    if pawnName == 'w':
-        enemy = 'b'
+# func: max_Value function.
+# input: board, current board
+#        state, containing the player who calls minimax/alpha-beta algorithm and player who moves now.
+def maxValue(board, state):
+    if cutOff(state.depth):
+        return utility(board, state)
     else:
-        enemy = 'w'
-    val = 0
-    for y in range(8):
-        for x in range(8):
-            if board[y][x] == enemy:
-                val = val + valueArr[x + y*8]
-    return val
-
-
-if strategy == 'offensive':
-    val = val + 2 * captured_piece(board, pawnName)
-else:
-    val = val + capture_piece(board, pawnName)
-if strategy == 'defensive':
-    val = val + 2 * enemy_piece_location(board, pawnName, state.player.goal)
-else:
-    val = val + enemy_piece_location(board, pawnName, state.player.goal)
+        val = -9999  # Suppose -9999 = -infinity
+        # bestMove = []
+        pawnList = find_all_pawn(board, state.currTurn)
+        # Find current player's direction
+        dir = ''
+        if state.currTurn == state.player.pawnName:
+            dir = state.player.goal
+        else:
+            if state.player.goal == 'U':
+                dir = 'D'
+            else:
+                dir = 'U'
+        # Check each pawn
+        for pawn in pawnList:
+            move = [pawn, dir, 'l']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = minValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result > val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+            move = [pawn, dir, 'f']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = minValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result > val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+            move = [pawn, dir, 'r']
+            if check_pawn_move(board, move):
+                captured = take_action(board, move)
+                # Change state
+                state.depth = state.depth + 1
+                state.currTurn = changeTurn(state.currTurn)
+                # Call
+                result = minValue(board, state)
+                # Restore state
+                state.depth = state.depth - 1
+                state.currTurn = changeTurn(state.currTurn)
+                if result > val:
+                    val = result
+                    # bestMove = move
+                retrieve_action(board, move, captured)
+        return val
