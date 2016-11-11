@@ -37,17 +37,15 @@ def multi_nb_training(train):
                 d2v[temp[0]] += int(temp[1])
                 sum2 += int(temp[1])
 
-    for key, value in d1v.items():
+    for key in d1v:
         if key not in d2v:
             d2v[key] = 0
-    for key, value in d2v.items():
+    for key in d2v:
         if key not in d1v:
             d1v[key] = 0
-    print(len(d1v))
-    print(len(d2v))
-    for key, value in d1v.items():
+    for key in d1v:
         d1v[key] = math.log((d1v[key]+1)/(sum1+len(d1v)))
-    for key, value in d2v.items():
+    for key in d2v:
         d2v[key] = math.log((d2v[key]+1)/(sum2+len(d1v)))
     pp = (pcount)/(pcount+ncount)
     return d1v, d2v, pp
@@ -79,10 +77,10 @@ def bernoulli_nb(train):
                     d2v[temp[0]] = 0
                 d2v[temp[0]] += 1
             #sum2 += 1
-    for key, value in d1v.items():
+    for key in d1v:
         if key not in d2v:
             d2v[key] = 0
-    for key, value in d2v.items():
+    for key in d2v:
         if key not in d1v:
             d1v[key] = 0
     # v = len(d1v)
@@ -91,9 +89,9 @@ def bernoulli_nb(train):
     # for key, value in d2v.items():
     #     d2v[key] = math.log((d2v[key]+1)/(ncount+v))
     v = len(d1v)
-    for key, value in d1v.items():
+    for key in d1v:
         d1v[key] = [math.log((d1v[key]+1)/(pcount+v)),math.log((pcount-d1v[key]+1)/(pcount+v))]
-    for key, value in d2v.items():
+    for key in d2v:
         d2v[key] = [math.log((d2v[key]+1)/(ncount+v)),math.log((ncount-d2v[key]+1)/(ncount+v))]
     pp = (pcount)/(pcount+ncount)
     return d1v, d2v, pp
@@ -148,19 +146,21 @@ def b_testing(d1v, d2v, pp, data):
         del currow[0]
         psum = 0
         nsum = 0
+        doc_word = []
+        for word in currow:
+            temp = word.split(':')
+            if temp[0] in d1v:
+                doc_word.append(temp[0])       #only append when word in the dictionary
+
         for vocab in d1v:
-            for word in currow:
-                temp = word.split(':')
-                if temp[0] in d1v:
-                    pos_word = d1v[temp[0]]
-                    neg_word = d2v[temp[0]]
-                    if vocab == temp[0]:
-                        psum += pos_word[0]
-                        nsum += neg_word[0]
-                        break
-                    else:
-                        psum += pos_word[1]
-                        nsum += neg_word[1]
+            pos_word = d1v[vocab]
+            neg_word = d2v[vocab]
+            if vocab in doc_word:           #if the dictionary word occurs at current document
+                psum += pos_word[0]
+                nsum += neg_word[0]
+            else:
+                psum += pos_word[1]
+                nsum += neg_word[1]
         lp = math.log(pp) + psum
         ln = math.log(1-pp) + nsum
         if lp>ln and result == '1':
