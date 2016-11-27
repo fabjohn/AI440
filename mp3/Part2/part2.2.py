@@ -107,7 +107,7 @@ def bernoulli_nb(train):
         class_p[n] = count_list[n]/10244        #total of 10244 documents.
         topic = topic_dict[n]
         for word in topic:
-            topic[word] = [math.log((topic[word]+1)/(count_list[n]+2)),math.log(1-(topic[word]+1)/(count_list[n]+2))]
+            topic[word] = [math.log((topic[word]+1)/(count_list[n]+2)),math.log((count_list[n]-topic[word]+1)/(count_list[n]+2))]
     return topic_dict, class_p
 
 #
@@ -163,6 +163,10 @@ def m_testing(topic_list, class_p):
             test = f.read().splitlines()
     correct = 0
     wrong = 0
+    mtx = [0]*40        ##topic
+    for n in range(40):
+        col = [0]*40
+        mtx[n]= col
     for row in test:
         currow = row.split(' ')
         topic = int(currow[0])
@@ -182,11 +186,32 @@ def m_testing(topic_list, class_p):
             if laplace[n] > max:
                 max = laplace[n]
                 max_t = n
+        temp = mtx[topic]
+        temp[max_t] += 1
         if max_t != topic:
             wrong +=1
         else:
             correct += 1
-
+    for row in mtx:
+        counter = -sys.maxsize-1
+        nsum = 0
+        for n in range(40):
+            nsum += row[n]
+        for n in range(40):
+            row[n] = row[n]/nsum
+        for n in range(40):
+            if row[n]>counter:
+                counter = row[n]
+                key_v = n
+        del row[key_v]
+        counter= -sys.maxsize-1
+        for n in range(39):
+            if row[n] > counter:
+                counter = row[n]
+                sec_high = n
+        print(sec_high)
+    for row in mtx:
+        print(row)
     accuracy = correct/(correct+wrong)
     return accuracy
 
@@ -196,6 +221,10 @@ def b_testing(topic_dict, class_p):
             test = f.read().splitlines()
     correct = 0
     wrong = 0
+    mtx = [0]*40        ##topic
+    for n in range(40):
+        col = [0]*40
+        mtx[n]= col
     for row in test:
         currow = row.split(' ')
         topic = int(currow[0])
@@ -224,12 +253,22 @@ def b_testing(topic_dict, class_p):
             if laplace[n] > max:
                 max = laplace[n]
                 max_t = n
-        print(topic)
-        print(max_t)
+        count = mtx[topic]
+        count[max_t] += 1
         if max_t != topic:
             wrong +=1
         else:
             correct += 1
+    for row in mtx:
+        nsum = 0
+        for n in range(40):
+            nsum += row[n]
+        for n in range(40):
+            row[n] = row[n]/nsum
+
+    for row in mtx:
+        print(row)
+
     accuracy = correct/(correct+wrong)
     return accuracy
 

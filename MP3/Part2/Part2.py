@@ -1,4 +1,6 @@
 import math
+import operator
+import sys
 
 def open_training_set(data):
     if data == '1':
@@ -47,6 +49,31 @@ def multi_nb_training(train):
         d1v[key] = math.log((d1v[key]+1)/(sum1+len(d1v)))
     for key in d2v:
         d2v[key] = math.log((d2v[key]+1)/(sum2+len(d1v)))
+    d1vt = d1v
+    d2vt = d2v
+    for key in d1vt:
+        d2vt[key] = d2v[key] - d1v[key]
+
+    # # print('positive')
+    # for n in range(10):
+    #     counter = -sys.maxsize-1
+    #     key_val = 0
+    #     for word in d1vt.keys():
+    #         if d1vt[word]>counter:
+    #             counter = d1vt[word]
+    #             key_val = word
+    #     print(key_val, end=' ')
+    #     del d1vt[key_val]
+    print('negative')
+    for n in range(10):
+        counter = -sys.maxsize-1
+        key_val = 0
+        for word in d2vt.keys():
+            if d2vt[word]>counter:
+                counter = d2vt[word]
+                key_val = word
+        print(key_val, end=' ')
+        del d2vt[key_val]
     pp = (pcount)/(pcount+ncount)
     return d1v, d2v, pp
 
@@ -90,9 +117,34 @@ def bernoulli_nb(train):
     #     d2v[key] = math.log((d2v[key]+1)/(ncount+v))
     v = len(d1v)
     for key in d1v:
-        d1v[key] = [math.log((d1v[key]+1)/(pcount+v)),math.log((pcount-d1v[key]+1)/(pcount+v))]
+        d1v[key] = [math.log((d1v[key]+1)/(pcount+2)),math.log((pcount-d1v[key]+1)/(pcount+2))]
     for key in d2v:
-        d2v[key] = [math.log((d2v[key]+1)/(ncount+v)),math.log((ncount-d2v[key]+1)/(ncount+v))]
+        d2v[key] = [math.log((d2v[key]+1)/(ncount+2)),math.log((ncount-d2v[key]+1)/(ncount+2))]
+
+    d1vt = d1v
+    d2vt = d2v
+    for key in d1vt:
+        d2vt[key] = d2v[key][0]-d1v[key][0]
+    # print('positive')
+    # for n in range(10):
+    #     counter = -sys.maxsize-1
+    #     key_val = 0
+    #     for word in d1vt.keys():
+    #         if d1vt[word]>counter:
+    #             counter = d1vt[word]
+    #             key_val = word
+    #     print(key_val, end=' ')
+    #     del d1vt[key_val]
+    print('\n negative')
+    for n in range(10):
+        counter = -sys.maxsize-1
+        key_val = 0
+        for word in d2vt.keys():
+            if d2vt[word]>counter:
+                counter = d2vt[word]
+                key_val = word
+        print(key_val,end=' ')
+        del d2vt[key_val]
     pp = (pcount)/(pcount+ncount)
     return d1v, d2v, pp
 
@@ -106,6 +158,10 @@ def m_testing(d1v, d2v, pp, data):
             test = f.read().splitlines()
     correct = 0
     wrong = 0
+    pc =0
+    pw = 0
+    nc = 0
+    nw = 0
     for row in test:
         currow = row.split(' ')
         result = currow[0]
@@ -121,13 +177,21 @@ def m_testing(d1v, d2v, pp, data):
         ln = math.log(1-pp) + nsum
         if lp>ln and result == '1':
             correct += 1
+            pc +=1
         elif lp>ln and result == '-1':
             wrong += 1
+            nw += 1
         elif lp<=ln and result == '1':
             wrong += 1
+            pw +=1
         elif lp<=ln and result =='-1':
             correct += 1
+            nc +=1
     accuracy = correct/(correct+wrong)
+    print( (pc/(pc+pw)),"|", (pw/(pc+pw)))
+    print ((nw/(nc+nw)),"|", (nc/(nc+nw)))
+    print( "conm")
+
     return accuracy
 
 
@@ -140,6 +204,10 @@ def b_testing(d1v, d2v, pp, data):
             test = f.read().splitlines()
     correct = 0
     wrong = 0
+    pc =0
+    pw = 0
+    nc = 0
+    nw = 0
     for row in test:
         currow = row.split(' ')
         result = currow[0]
@@ -165,13 +233,20 @@ def b_testing(d1v, d2v, pp, data):
         ln = math.log(1-pp) + nsum
         if lp>ln and result == '1':
             correct += 1
+            pc += 1
         elif lp>ln and result == '-1':
             wrong += 1
+            nw += 1
         elif lp<=ln and result == '1':
             wrong += 1
+            pw += 1
         elif lp<=ln and result =='-1':
             correct += 1
+            nc += 1
     accuracy = correct/(correct+wrong)
+
+    print( (pc/(pc+pw)),"|", (pw/(pc+pw)))
+    print ((nw/(nc+nw)),"|", (nc/(nc+nw)))
     return accuracy
 
 
@@ -184,7 +259,7 @@ if type == '1':
     vocab1, vocab2, pp = multi_nb_training(train)
 else:
     vocab1, vocab2, pp = bernoulli_nb(train)
-if type == '1':
-    print(m_testing(vocab1, vocab2, pp, data))
-else:
-    print(b_testing(vocab1, vocab2, pp, data))
+# if type == '1':
+#     ##print(m_testing(vocab1, vocab2, pp, data))
+# else:
+#     print(b_testing(vocab1, vocab2, pp, data))
