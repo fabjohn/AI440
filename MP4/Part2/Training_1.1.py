@@ -84,6 +84,11 @@ def perceptron_training(training_data, label_data, weight_class):
 def perceptron_classfication(testing_data, label_data, weight_class):
     correct = 0
     label_count = len(label_data)
+    cm = []
+    for i in range(10):
+        temp = [0]*10
+        cm.append(temp)
+    single_digit_count = [0]*10
     for x in range(label_count):
         guess = np.zeros(10)
         for i in range(10):
@@ -93,6 +98,12 @@ def perceptron_classfication(testing_data, label_data, weight_class):
         if guess_label == label_data[x]:
             correct += 1
         # training complete
+        single_digit_count[label_data[x]] += 1
+        cm[label_data[x]][guess_label] += 1
+    for n in range(10):
+        for m in range(10):
+            cm[n][m] = cm[n][m]/single_digit_count[n]
+    cmm = np.matrix(cm)
     print(correct/label_count)
 
 
@@ -168,11 +179,7 @@ bias = 1
 
 class_weight = init_weight(bias)
 label, training = read_Files('digitdata/trainingimages','digitdata/traininglabels', bias)
-#trained_weight = perceptron_training(training, label, class_weight)
+trained_weight = perceptron_training(training, label, class_weight)
 test_label, testing_data = read_Files('digitdata/testimages', 'digitdata/testlabels', bias)
-#perceptron_classfication(testing_data, test_label, trained_weight)
-KNN_main(training, label, testing_data, test_label, 7)
-# print_ratio(test[8])
-
-# numPair = [(test[4], test[9]), (test[5], test[3]), (test[7], test[9]), (test[8], test[3])]
-# odd_ratio(numPair)
+perceptron_classfication(testing_data, test_label, trained_weight)
+#KNN_main(training, label, testing_data, test_label, 7)
