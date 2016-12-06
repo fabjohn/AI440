@@ -51,17 +51,17 @@ def read_Files(imageFileName, labelFileName, bias):
                     feature = 1
                 cur_digit[x] = feature
         if bias:
-            cur_digit[27*27+1] = 1
+            cur_digit[28*28] = 1
         label_data.append(currLabel)
         training_data.append(cur_digit)
         label_count += 1
     return label_data, training_data
 
 def perceptron_training(training_data, label_data, weight_class):
-    epoch = 60
+    epoch = 150
     label_count = len(label_data)
     for e in range(epoch):
-        a = 80/(80+e)
+        a = 100/(100+e)
         guess = np.zeros(10)
         # random ordering
         itrange = list(range(label_count))
@@ -73,10 +73,16 @@ def perceptron_training(training_data, label_data, weight_class):
             guess_label = np.argmax(guess)
             # training begin if wrong classfication:
             if guess_label != label_data[x]:
-                weight_class[label_data[x]] = weight_class[label_data[x]] + a*training_data[x]
-                weight_class[guess_label] = weight_class[guess_label] - a*training_data[x]
-                wrong += 1
-        print(wrong/label_count )
+            #attempt for implemeting differentiable perceptron
+                dotp = np.dot(weight_class[label_data[x]], training_data[x])
+                sigmoid1 = 1/(1+np.exp(-dotp))
+                dotn = np.dot(weight_class[guess_label], training_data[x])
+                sigmoid2 = 1/(1+np.exp(-dotn))
+                weight_class[label_data[x]] = weight_class[label_data[x]] + a*training_data[x]#*sigmoid1* (1-sigmoid1)
+                weight_class[guess_label] = weight_class[guess_label] - a*training_data[x]#*sigmoid2 *(1-sigmoid1)
+                wrong +=1
+           #print(label_data[x], guess_label)
+        print(1-wrong/label_count)
         # training complete
     return weight_class
 
@@ -107,17 +113,25 @@ def perceptron_classfication(testing_data, label_data, weight_class):
     print(correct/label_count)
 
 
-# Part2.2
+# Part2.2 using Euclidean
 def get_distance(test, train):
     distance = 0
     for x in range(28*28):
         distance += pow((test[x] - train[x]),2)
     return math.sqrt(distance)
+#using hamming distance
+def get_distance1(test, train):
+    distance = 0
+    for x in range(28*28):
+        distance += abs(test[x]- train[x])
+    return distance
 
 def get_neighbors(test_data, train_data, train_label, k):
     distances = []
     for x in range(len(train_data)):
-        temp = get_distance(test_data, train_data[x])
+        #temp = np.count_nonzero(test_data!=train_data[x])
+        temp = np.linalg.norm(test_data - train_data[x])
+        # temp = get_distance1(test_data, train_data[x])
         distances.append((temp, train_label[x]))
     distances.sort(key=operator.itemgetter(0))
     neighbors = []
@@ -140,46 +154,38 @@ def KNN_main(training_data, training_label, testing_data, testing_label, k):
     label_count = len(testing_label)
     correct = 0
     count = 0
+    cm = []
+    for i in range(10):
+        temp = [0]*10
+        cm.append(temp)
+    single_digit_count = [0] * 10
     for x in range(label_count):
         neighbors = get_neighbors(testing_data[x], training_data, training_label, k)
         predict = get_votes(neighbors)
         if predict == testing_label[x]:
             correct += 1
         count +=1
-        print(predict, testing_label[x])
+        single_digit_count[testing_label[x]] += 1
+        cm[testing_label[x]][predict] += 1
         print(correct/count)
+    for n in range(10):
+        for m in range(10):
+            cm[n][m] = cm[n][m]/single_digit_count[n]
+    print(cm)
     print(correct/label_count)
 
-# def print_image(test_imageFileName, test_labelFileName, imageNum):
-#     imageFile = open(test_imageFileName, 'r')
-#     labelFile = open(test_labelFileName, 'r')
-#     counter = 1
-#     while True:
-#         currLabel = labelFile.read(1)
-#         if currLabel == '\n':
-#             currLabel = labelFile.read(1)
-#         # Using currLabel to determine when we finish reading the training files
-#         if not currLabel:
-#             break
-#         #
-#         if counter == imageNum:
-#             for i in range(28):
-#                 string =imageFile.readline()
-#                 print(string[0:len(string)-1],'|')
-#
-#         else:
-#             for i in range(28):
-#                 string = imageFile.readline()
-#         counter += 1
-#
 
 
-
-bias = 1
-
+bias = 0
+k = 4
+perceptron = 1      #0 if you want to use knn
 class_weight = init_weight(bias)
 label, training = read_Files('digitdata/trainingimages','digitdata/traininglabels', bias)
-trained_weight = perceptron_training(training, label, class_weight)
+# for n in range(10):
+#     print(trained_weight[n].tolist())
 test_label, testing_data = read_Files('digitdata/testimages', 'digitdata/testlabels', bias)
-perceptron_classfication(testing_data, test_label, trained_weight)
-#KNN_main(training, label, testing_data, test_label, 7)
+if perceptron == 1:
+    trained_weight = perceptron_training(training, label, class_weight)
+    perceptron_classfication(testing_data, test_label, trained_weight)
+else:
+    KNN_main(training, label, testing_data, test_label, k)
